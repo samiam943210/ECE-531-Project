@@ -80,7 +80,7 @@ int main(void) {
 
     printf("Welcome to the best blackjack simulator!\n");
     
-    //run the game
+    //run the game until the player is bankrupt
     while(player.money > 0) {
         all_hands_bust = 1;
         printf("\n *** new hand ***\n");
@@ -208,6 +208,7 @@ void player_turn(char ** shoe) {
     int hand_index = 0, error_check, num_splits = 0, i;
     char action[12];
     while(1) {
+        //get user input for their desired action
         printf("please take an action (hit, double_down, split, stand): ");
         error_check = scanf("%11s", action);
         if (error_check != 1) {
@@ -311,7 +312,7 @@ void player_turn(char ** shoe) {
             //split the hand
             player.money -= player.bet_size;
             i=1;
-            while(strcmp(player.hand[hand_index+i][0], "")){
+            while(strcmp(player.hand[hand_index+i][0], "")){ //find the next available hand array
                 i++;
             }
             if(!strcpy(player.hand[hand_index+i][0], player.hand[hand_index][1])) {
@@ -463,6 +464,7 @@ char* pop_shoe(char ** shoe) {
 }
 
 
+//debugging function, used to print all the cards in the shoe
 void print_shoe(char ** shoe) {
     int i;
 
