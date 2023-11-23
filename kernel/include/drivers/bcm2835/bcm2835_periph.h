@@ -416,7 +416,68 @@
 /* TDR = Test Data Register */
 #define UART0_TDR	(UART0_BASE + 0x8C)
 
+/************************************************/
+/* I2C (see BCM2835 Peripherals Chapter 3	*/
+/************************************************/
+#define I2C0_BASE	(IO_BASE + 0x205000) /* 0x7E205000*/
+#define I2C1_BASE	(IO_BASE + 0x804000) /* 0x7E805000*/
+#define I2C2_BASE	(IO_BASE + 0x805000) /* 0x7E805000*/
 
+#define I2C0_C		(I2C0_BASE + 0x0)  /* Control */
+#define I2C0_S		(I2C0_BASE + 0x4)  /* Status */
+#define I2C0_DLEN	(I2C0_BASE + 0x8)  /* Data Length */
+#define I2C0_A		(I2C0_BASE + 0xC)  /* Slave Address */
+#define I2C0_FIFO	(I2C0_BASE + 0x10) /* Data FIFO */
+#define I2C0_DIV	(I2C0_BASE + 0x14) /* Clock Divider */
+#define I2C0_DEL	(I2C0_BASE + 0x18) /* Data Delay */
+#define I2C0_CLKT	(I2C0_BASE + 0x1c) /* Clock Stretch Timeout */
+
+/* I2C1 is the interface exposed on the Pi GPIO */
+#define I2C1_C		(I2C1_BASE + 0x0)  /* Control */
+#define I2C1_S		(I2C1_BASE + 0x4)  /* Status */
+#define I2C1_DLEN	(I2C1_BASE + 0x8)  /* Data Length */
+#define I2C1_A		(I2C1_BASE + 0xC)  /* Slave Address */
+#define I2C1_FIFO	(I2C1_BASE + 0x10) /* Data FIFO */
+#define I2C1_DIV	(I2C1_BASE + 0x14) /* Clock Divider */
+#define I2C1_DEL	(I2C1_BASE + 0x18) /* Data Delay */
+#define I2C1_CLKT	(I2C1_BASE + 0x1c) /* Clock Stretch Timeout */
+
+#define I2C2_C		(I2C2_BASE + 0x0)  /* Control */
+#define I2C2_S		(I2C2_BASE + 0x4)  /* Status */
+#define I2C2_DLEN	(I2C2_BASE + 0x8)  /* Data Length */
+#define I2C2_A		(I2C2_BASE + 0xC)  /* Slave Address */
+#define I2C2_FIFO	(I2C2_BASE + 0x10) /* Data FIFO */
+#define I2C2_DIV	(I2C2_BASE + 0x14) /* Clock Divider */
+#define I2C2_DEL	(I2C2_BASE + 0x18) /* Data Delay */
+#define I2C2_CLKT	(I2C2_BASE + 0x1c) /* Clock Stretch Timeout */
+
+#define I2C_C_CEN	(1<<15) /* Enable */
+#define I2C_C_INTR	(1<<10) /* Interrupt on RX */
+#define I2C_C_INTT	(1<<9)  /* Interrupt on TX */
+#define I2C_C_INTD	(1<<8)  /* Interrupt on Done */
+#define I2C_C_ST	(1<<7)  /* Start Transfer */
+#define I2C_C_CLEAR	(3<<4)  /* Clear FIFO */
+#define I2C_C_READ	(1<<0)  /* Read Transfer */
+
+#define I2C_S_CLKT	(1<<9)
+#define I2C_S_ERR	(1<<8)
+#define I2C_S_RXF	(1<<7)
+#define I2C_S_TXE	(1<<6)
+#define I2C_S_RXD	(1<<5)
+#define I2C_S_TXD	(1<<4)
+#define I2C_S_RXR	(1<<3)
+#define I2C_S_TXW	(1<<2)
+#define I2C_S_DONE	(1<<1)
+#define I2C_S_TA	(1<<0)
+
+/* These probably are not needed? */
+#define I2C_DLEN_DLEN	(0xFFFF<<0)
+#define I2C_A_ADDR	(0x3F<<0)
+#define I2C_FIFO_DATA	(0xFF<<0)
+#define I2C_FIFO_CDIV	(0xFFFF<<0)
+#define I2C_DEL_FEDL	(0xFFFF<<16)
+#define I2C_DEL_REDL	(0xFFFF<<0)
+#define I2C_CLKT_TOUT	(0xFFFF<<0)
 
 /************************************************/
 /* PWM (see BCM2835 Peripherals Chapter 9	*/
