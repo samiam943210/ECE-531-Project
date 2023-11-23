@@ -1,0 +1,30 @@
+# Build files
+*.o
+*.out
+*.so
+*.a
+*.lib
+*.dis
+*.map
+*.elf
+*.img
+
+# specific executable files
+genromfs
+date.h
+cat
+cat_count
+hello
+image
+initrd.h
+initrd.romfs
+ll
+ls
+printa
+printb
+pwd
+shell
+slideshow
+sysinfo
+uname
+blackjack
