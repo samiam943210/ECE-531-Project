@@ -25,6 +25,6 @@ int32_t i2c_init(int32_t type);
 void i2c_enable_interrupts(void);
 int32_t i2c_read(int fd, uint8_t *buf, size_t count); /* fd will probably be changed */
 int32_t i2c_write(int fd, uint8_t *buf, size_t count); /* fd will probably be changed */
-int32_t i2c_ioctl(int fd, int32_t request, ...) /* fd will probably be changed */
+int32_t i2c_ioctl(int fd, int32_t request, ...); /* fd will probably be changed */
 
 #endif /* _KERNEL_I2C_H */

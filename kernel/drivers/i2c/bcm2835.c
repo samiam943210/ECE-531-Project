@@ -1,6 +1,6 @@
 /*
  * This code drives the BCM2835 BSC I2C.
- * As described in chapter FIXME of the BCM2835 ARM Peripherals Manual
+ * As described in chapter 3 of the BCM2835 ARM Peripherals Manual
  */
 
 #include <stdint.h>
