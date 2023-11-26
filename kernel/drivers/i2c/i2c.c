@@ -15,7 +15,7 @@ int32_t i2c_init(int32_t type) {
 	uint32_t result = 0;
 
 	if (type == I2C_BCM2835) {
-		result = bcm2835_i2c_init(&i2c);
+		result = bcm2835_i2c1_init(&i2c);
 	}
 	return 0;
 }

@@ -10,6 +10,7 @@
 #include "drivers/bcm2835/bcm2835_io.h"
 #include "drivers/bcm2835/bcm2835_periph.h"
 #include "drivers/i2c/i2c.h"
+#include "drivers/i2c/bcm2835.h"
 
 #include "lib/delay.h"
 
@@ -17,12 +18,11 @@
 static void bcm2835_i2c_enable_interrupts(void) {
 	return; /* FIXME */
 }
-
 static int32_t bcm2835_i2c_interrupt_handler(void) {
 	return 0; /* FIXME */
 }
 
-static int32_t bcm2835_i2c_gpio_setup(void) {
+static int32_t bcm2835_i2c1_gpio_setup(void) {
 	uint32_t old;
 	
 	/* Setup GPIO pins 2 and 3 */
@@ -59,7 +59,9 @@ static int32_t bcm2835_i2c_write(struct i2c_client *client, uint8_t *buf, size_t
 	return 0;
 }
 
-int32_t bcm2835_i2c_init(struct i2c_core *i2c) {
+int32_t bcm2835_i2c1_init(struct i2c_core *i2c) {
+	uint32_t old;
+	
 	/* Setup the function pointers */
 	i2c->read = bcm2835_i2c_read;
 	i2c->write = bcm2835_i2c_write;
@@ -67,12 +69,22 @@ int32_t bcm2835_i2c_init(struct i2c_core *i2c) {
 	i2c->interrupt_handler = bcm2835_i2c_interrupt_handler;
 
 	/* Disable the i2c */
+	old = bcm2835_read(I2C1_C);
+	old &= ~(I2C_C_I2CEN);
+	bcm2835_write(I2C1_C, old);
+	//bcm2835_write(I2C1_C, old & ~I2C_C_I2CEN);
 
 	/* Configure the needed GPIO pins */
-	bcm2835_i2c_gpio_setup();
+	bcm2835_i2c1_gpio_setup();
 
 	/* Configure i2c registers */
+	/* For now, just disable interrupts */
+	old &= ~(I2C_C_INTD | I2C_C_INTR | I2C_C_INTT);
+	bcm2835_write(I2C1_C, old);
 
 	/* Enable i2c */
+	old |= I2C_C_I2CEN;
+	bcm2835_write(I2C1_C, old);
+	//bcm2835_write(I2C1_C, old | I2C_C_I2CEN);
 	return 0;
 }

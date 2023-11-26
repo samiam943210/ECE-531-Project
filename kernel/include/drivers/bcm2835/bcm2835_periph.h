@@ -451,7 +451,7 @@
 #define I2C2_DEL	(I2C2_BASE + 0x18) /* Data Delay */
 #define I2C2_CLKT	(I2C2_BASE + 0x1c) /* Clock Stretch Timeout */
 
-#define I2C_C_CEN	(1<<15) /* Enable */
+#define I2C_C_I2CEN	(1<<15) /* Enable */
 #define I2C_C_INTR	(1<<10) /* Interrupt on RX */
 #define I2C_C_INTT	(1<<9)  /* Interrupt on TX */
 #define I2C_C_INTD	(1<<8)  /* Interrupt on Done */
