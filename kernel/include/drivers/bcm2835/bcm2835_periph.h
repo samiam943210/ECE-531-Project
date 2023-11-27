@@ -458,6 +458,7 @@
 #define I2C_C_ST	(1<<7)  /* Start Transfer */
 #define I2C_C_CLEAR	(3<<4)  /* Clear FIFO */
 #define I2C_C_READ	(1<<0)  /* Read Transfer */
+#define I2C_C_WRITE	(0<<0)  /* Write Transfer (just a dummy value for readability) */
 
 #define I2C_S_CLKT	(1<<9)
 #define I2C_S_ERR	(1<<8)
@@ -474,7 +475,7 @@
 #define I2C_DLEN_DLEN	(0xFFFF<<0)
 #define I2C_A_ADDR	(0x3F<<0)
 #define I2C_FIFO_DATA	(0xFF<<0)
-#define I2C_FIFO_CDIV	(0xFFFF<<0)
+#define I2C_DIV_CDIV	(0xFFFF<<0)
 #define I2C_DEL_FEDL	(0xFFFF<<16)
 #define I2C_DEL_REDL	(0xFFFF<<0)
 #define I2C_CLKT_TOUT	(0xFFFF<<0)
