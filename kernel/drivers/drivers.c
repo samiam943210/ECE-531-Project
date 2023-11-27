@@ -8,6 +8,7 @@
 #include "drivers/timer/timer.h"
 #include "drivers/serial/serial.h"
 #include "drivers/pmu/arm-pmu.h"
+#include "drivers/i2c/i2c.h"
 
 void drivers_init_all(void) {
 
@@ -23,5 +24,6 @@ void drivers_init_all(void) {
 
 	serial_enable_interrupts();
 
-
+	/* Set up I2C */
+	i2c_init(I2C_BCM2835);
 }
