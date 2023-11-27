@@ -13,6 +13,7 @@ drivers-armv7.a:	\
 		block/block.armv7.a \
 		console/console.armv7.a \
 		gpio/gpio.armv7.a \
+		i2c/i2c.armv7.a \
 		led/led.armv7.a \
 		serial/serial.armv7.a \
 		timer/timer.armv7.a
@@ -23,6 +24,7 @@ drivers-armv7.a:	\
 		block/block.armv7.a \
 		console/console.armv7.a \
 		gpio/gpio.armv7.a \
+		i2c/i2c.armv7.a \
 		led/led.armv7.a \
 		serial/serial.armv7.a \
 		timer/timer.armv7.a
@@ -42,6 +44,9 @@ console/console.armv7.a:	force_look
 
 gpio/gpio.armv7.a:	force_look
 	cd gpio && make
+
+i2c/i2c.armv7.a:	force_look
+	cd i2c && make
 
 led/led.armv7.a:	force_look
 	cd led && make
@@ -64,6 +69,7 @@ clean:
 	cd block && make clean
 	cd console && make clean
 	cd gpio && make clean
+	cd i2c && make clean
 	cd led && make clean
 	cd serial && make clean
 	cd timer && make clean
