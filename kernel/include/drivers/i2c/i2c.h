@@ -7,7 +7,7 @@
 #define I2C_BCM2835 0
 
 struct i2c_client {
-	uint32_t address; /* Stored in lower bits */
+	uint16_t address; /* Stored in lower bits */
 	uint32_t flags; /* Holds things like 10 bit address, etc. */
 };
 
@@ -23,8 +23,8 @@ struct i2c_core {
 
 int32_t i2c_init(int32_t type);
 void i2c_enable_interrupts(void);
-int32_t i2c_read(int fd, uint8_t *buf, size_t count); /* fd will probably be changed */
-int32_t i2c_write(int fd, const uint8_t *buf, size_t count); /* fd will probably be changed */
-int32_t i2c_ioctl(int fd, int32_t request, ...); /* fd will probably be changed */
+int32_t i2c_read(uint16_t address, uint8_t *buf, size_t count);
+int32_t i2c_write(uint16_t address, const uint8_t *buf, size_t count);
+// int32_t i2c_ioctl(int fd, int32_t request, ...); /* fd will probably be changed */
 
 #endif /* _KERNEL_I2C_H */
