@@ -67,15 +67,10 @@ static void i2c1_setup_xfer(uint32_t addr, size_t count) {
 	 */
 	uint32_t old;
 	bcm2835_write(I2C1_A, addr & I2C_A_ADDR); /* Write the address */
-
-	/* Clear previous flags */
-	// old = bcm2835_read(I2C1_S);
-	// old |= I2C_S_ERR | I2C_S_CLKT | I2C_S_DONE;
-	bcm2835_write(I2C1_S, I2C_S_ERR | I2C_S_CLKT | I2C_S_DONE);
-
+	bcm2835_write(I2C1_S, I2C_S_ERR | I2C_S_CLKT | I2C_S_DONE); /* Clear previous flags */
 	bcm2835_write(I2C1_DLEN, count); /* Write the data length */
 
-	/* Clear the FIFO, set direction and start the transfer */
+	/* Clear the FIFO and previous direction */
 	old = bcm2835_read(I2C1_C);
 	old &= ~I2C_C_READ;
 	old |= I2C_C_CLEAR;
@@ -91,8 +86,9 @@ static int32_t bcm2835_i2c1_read(const struct i2c_client *client, uint8_t *buf, 
 
 	i2c1_setup_xfer(client->address, count);
 
+	/* Set direction and start the transfer */
 	old = bcm2835_read(I2C1_C);
-	old |= (1<<7) | 1;
+	old |= I2C_C_ST | I2C_C_READ;
 	bcm2835_write(I2C1_C, old);
 
 	delay(150);
@@ -159,8 +155,9 @@ static int32_t bcm2835_i2c1_write(const struct i2c_client *client, const uint8_t
 
 	i2c1_setup_xfer(client->address, count);
 
+	/* Set direction and start the transfer */
 	old = bcm2835_read(I2C1_C);
-	old |= (1<<7);
+	old |= I2C_C_ST;
 	bcm2835_write(I2C1_C, old);
 	delay(150);
 
