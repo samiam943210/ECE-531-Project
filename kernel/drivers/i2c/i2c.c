@@ -64,6 +64,7 @@ int32_t i2c_init(int32_t type) {
 	printk("Read %d bytes\n", x);
 
 	printk("Read bytes: %x %x %x %x %x %x\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
+	printk("Classic controller pro is 1 0 a4 20 1 1\n");
 	#endif
 
 	return 0;

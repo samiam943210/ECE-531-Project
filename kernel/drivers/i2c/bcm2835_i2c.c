@@ -15,9 +15,7 @@
 #include "lib/delay.h"
 #include "lib/printk.h"
 
-#define STATUS (bcm2835_read(I2C1_S))
-#define xfer_done(REG) ((bcm2835_read(REG) >> 1) & 0x01)
-
+#define XFER_DONE(I2C) ((bcm2835_read(I2C##_S) & I2C_S_DONE))
 
 /* Private function definitions */
 static void bcm2835_i2c_enable_interrupts(void) {
@@ -83,30 +81,24 @@ static int32_t bcm2835_i2c1_read(const struct i2c_client *client, uint8_t *buf, 
 	uint32_t old;
 	int32_t bytes_received = 0;
 
-	printk("\ni2c1 read start\n");
-
 	i2c1_setup_xfer(client->address, count);
 
 	/* Set direction and start the transfer */
 	old = bcm2835_read(I2C1_C);
 	old |= I2C_C_ST | I2C_C_READ;
 	bcm2835_write(I2C1_C, old);
-
 	delay(150);
-	printk("i2c status reg: %x\n", STATUS & 0x1ff);
 
 	/* TODO: Use interrupts instead of this polling method */
-	while (xfer_done(I2C1_S) != 1) { /* Block until done*/
-		while(bytes_received < count && (STATUS & I2C_S_RXD)) {
+	while (!XFER_DONE(I2C1)) { /* Block until done*/
+		while(bytes_received < count && (bcm2835_read(I2C1_S) & I2C_S_RXD)) {
 			*buf++ = bcm2835_read(I2C1_FIFO) & 0xff;
 			bytes_received++;
 		}
 	}
 
-	printk("i2c read block finished");
-
-	/* grab the bytes from the fifo (if needed) */
-	while (bytes_received < count && (STATUS & I2C_S_RXD)) {
+	/* grab the remaining bytes from the fifo (if needed) */
+	while (bytes_received < count && (bcm2835_read(I2C1_S) & I2C_S_RXD)) {
 		*buf++ = bcm2835_read(I2C1_FIFO) & 0xff;
 		bytes_received++;
 	}
@@ -140,8 +132,8 @@ static int32_t bcm2835_i2c1_write(const struct i2c_client *client, const uint8_t
 	delay(150);
 
 	/* TODO: Use interrupts instead of this polling method */
-	while (STATUS & I2C_S_DONE != 0) { /* Loop while transfer is ongoing */
-		while(STATUS & I2C_S_TXW) { /* Loop while there is data to write */
+	while (!XFER_DONE(I2C1)) { /* Loop while transfer is ongoing */
+		while(bcm2835_read(I2C1_S) & I2C_S_TXW) { /* Loop while there is data to write */
 			bcm2835_write(I2C1_FIFO, *buf++);
 			++bytes_sent;
 		}
@@ -165,7 +157,7 @@ static int32_t bcm2835_i2c1_write(const struct i2c_client *client, const uint8_t
 int32_t bcm2835_i2c1_init(struct i2c_core *i2c) {
 	uint32_t old;
 
-	/* Setup the function pointers */
+	/* Set up the function pointers */
 	i2c->read = bcm2835_i2c1_read;
 	i2c->write = bcm2835_i2c1_write;
 	i2c->enable_interrupts = bcm2835_i2c_enable_interrupts;
@@ -177,12 +169,8 @@ int32_t bcm2835_i2c1_init(struct i2c_core *i2c) {
 	bcm2835_write(I2C1_C, old);
 	//bcm2835_write(I2C1_C, old & ~I2C_C_I2CEN);
 
-	/* Configure the needed GPIO pins */
-	bcm2835_i2c1_gpio_setup();
-
 	/* Configure i2c registers */
 	/* For now, just disable interrupts */
-	old = bcm2835_read(I2C1_C);
 	old &= ~(I2C_C_INTD | I2C_C_INTR | I2C_C_INTT);
 	bcm2835_write(I2C1_C, old);
 
@@ -192,6 +180,9 @@ int32_t bcm2835_i2c1_init(struct i2c_core *i2c) {
 	/* Enable i2c */
 	old |= I2C_C_I2CEN;
 	bcm2835_write(I2C1_C, old);
-	//bcm2835_write(I2C1_C, old | I2C_C_I2CEN);
+
+	/* Configure the GPIO pins */
+	bcm2835_i2c1_gpio_setup();
+
 	return 0;
 }
