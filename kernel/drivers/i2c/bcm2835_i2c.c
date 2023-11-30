@@ -87,7 +87,7 @@ static int32_t bcm2835_i2c1_read(const struct i2c_client *client, uint8_t *buf, 
 	old = bcm2835_read(I2C1_C);
 	old |= I2C_C_ST | I2C_C_READ;
 	bcm2835_write(I2C1_C, old);
-	delay(150);
+	// delay(150);
 
 	/* TODO: Use interrupts instead of this polling method */
 	while (!XFER_DONE(I2C1)) { /* Block until done*/
@@ -129,7 +129,7 @@ static int32_t bcm2835_i2c1_write(const struct i2c_client *client, const uint8_t
 	old = bcm2835_read(I2C1_C);
 	old |= I2C_C_ST;
 	bcm2835_write(I2C1_C, old);
-	delay(150);
+	// delay(150);
 
 	/* TODO: Use interrupts instead of this polling method */
 	while (!XFER_DONE(I2C1)) { /* Loop while transfer is ongoing */
@@ -167,7 +167,6 @@ int32_t bcm2835_i2c1_init(struct i2c_core *i2c) {
 	old = bcm2835_read(I2C1_C);
 	old &= ~(I2C_C_I2CEN);
 	bcm2835_write(I2C1_C, old);
-	//bcm2835_write(I2C1_C, old & ~I2C_C_I2CEN);
 
 	/* Configure i2c registers */
 	/* For now, just disable interrupts */
