@@ -5,10 +5,13 @@ LINKER_SCRIPT = kernel.ld
 
 INCLUDE = -I./include
 
-all:	kernel7.img kernel7.dis
+all:	kernel7.img kernel7l.img kernel7.dis
 
 kernel7.img:	kernel7.elf
 	$(CROSS)objcopy kernel7.elf -O binary kernel7.img
+
+kernel7l.img: kernel7.img kernel7.elf
+	cp kernel7.img kernel7l.img
 
 ### ARMV7
 
@@ -79,7 +82,7 @@ kernel7.dis:	kernel7.elf
 	$(CROSS)objdump --disassemble-all kernel7.elf > kernel7.dis
 
 clean:
-	rm -f *~ *.o *.map *.elf kernel.img kernel7.img *.dis date.h
+	rm -f *~ *.o *.map *.elf kernel.img kernel7.img kernel7l.img *.dis date.h
 	cd boot && make clean
 	cd debug && make clean
 	cd drivers && make clean
