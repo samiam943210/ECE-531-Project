@@ -16,6 +16,7 @@
 #include "lib/printk.h"
 
 #define STATUS (bcm2835_read(I2C1_S))
+#define xfer_done(REG) ((bcm2835_read(REG) >> 1) & 0x01)
 
 
 /* Private function definitions */
@@ -93,45 +94,22 @@ static int32_t bcm2835_i2c1_read(const struct i2c_client *client, uint8_t *buf, 
 
 	delay(150);
 	printk("i2c status reg: %x\n", STATUS & 0x1ff);
-	old = 0;
 
 	/* TODO: Use interrupts instead of this polling method */
-	while ((STATUS & I2C_S_DONE) != 0) { /* Loop while the I2C transfer is not done*/
-		if (old == 0) {
-			printk("made it inside read loop???\n");
-			old = 1;
-		}
-		while (STATUS & I2C_S_RXD) { /* Loop while there is data in the FIFO */
-			*buf = bcm2835_read(I2C1_FIFO) & I2C_FIFO_DATA;
-			buf++;
+	while (xfer_done(I2C1_S) != 1) { /* Block until done*/
+		while(bytes_received < count && (STATUS & I2C_S_RXD)) {
+			*buf++ = bcm2835_read(I2C1_FIFO) & 0xff;
 			bytes_received++;
 		}
 	}
 
-	printk("i2c1_s_done, data in fifo, perhaps?\n");
+	printk("i2c read block finished");
 
-	/* Transfer done, but may be data in fifo */
-	while (bytes_received < count && STATUS & I2C_S_RXD) {
-		*buf = bcm2835_read(I2C1_FIFO) & I2C_FIFO_DATA;
-		buf++;
+	/* grab the bytes from the fifo (if needed) */
+	while (bytes_received < count && (STATUS & I2C_S_RXD)) {
+		*buf++ = bcm2835_read(I2C1_FIFO) & 0xff;
 		bytes_received++;
 	}
-
-	// while (!(bcm2835_read(I2C1_S) & I2C_S_DONE)) { /* Loop while transfer is ongoing */
-	// 	/* Loop while there is data in the FIFO */
-	// 	while(bcm2835_read(I2C1_S) & I2C_S_RXD) {
-	// 		*buf++ = bcm2835_read(I2C1_FIFO) & I2C_FIFO_DATA;
-	// 		++bytes_received;
-	// 	}
-	// }
-
-	// printk("i2c1_s_done, data in fifo, perhaps?\n");
-
-	// /* The transfer may be done, but data could still be in the FIFO */
-	// while (bytes_received < count && bcm2835_read(I2C1_S) & I2C_S_RXD) {
-	// 	*buf++ = bcm2835_read(I2C1_FIFO) & I2C_FIFO_DATA;
-	// 	++bytes_received;
-	// }
 
 	/* Set the DONE flag */
 	old = bcm2835_read(I2C1_S);
