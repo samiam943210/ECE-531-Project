@@ -12,6 +12,7 @@
 #include "drivers/bcm2835/bcm2835_periph.h"
 #include "drivers/thermal/thermal.h"
 #include "drivers/random/bcm2835_rng.h"
+#include "drivers/i2c/i2c.h"
 #include "fs/files.h"
 
 #include "time/time.h"
@@ -217,6 +218,13 @@ uint32_t swi_handler_c(
 
 		case SYSCALL_MALLOC:
 			result=(uint32_t)memory_allocate(r0);
+			break;
+
+		case SYSCALL_I2C_READ:
+			result=(uint32_t)i2c_read(r0, (uint8_t *)r1, r2);
+			break;
+		case SYSCALL_I2C_WRITE:
+			result=(uint32_t)i2c_write(r0, (uint8_t *)r1, r2);
 			break;
 
 		default:
