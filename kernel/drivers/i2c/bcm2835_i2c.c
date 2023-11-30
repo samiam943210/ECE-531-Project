@@ -56,7 +56,7 @@ static void bcm2835_i2c1_gpio_setup(void) {
 	bcm2835_write(GPIO_GPPUDCLK0, 0);
 }
 
-static void i2c1_start_xfer(uint32_t addr, size_t count, uint32_t dir) {
+static void i2c1_setup_xfer(uint32_t addr, size_t count) {
 	/*
 	 * Transfers start with the following process:
 	 * 1. Set address register
@@ -78,10 +78,8 @@ static void i2c1_start_xfer(uint32_t addr, size_t count, uint32_t dir) {
 	/* Clear the FIFO, set direction and start the transfer */
 	old = bcm2835_read(I2C1_C);
 	old &= ~I2C_C_READ;
-	old |= I2C_C_CLEAR /*| dir | I2C_C_ST*/;
+	old |= I2C_C_CLEAR;
 	bcm2835_write(I2C1_C, old);
-
-
 }
 
 /* FIXME: this fails if count > 65535 */
@@ -91,16 +89,22 @@ static int32_t bcm2835_i2c1_read(const struct i2c_client *client, uint8_t *buf, 
 
 	printk("\ni2c1 read start\n");
 
-	i2c1_start_xfer(client->address, count, I2C_C_WRITE);
+	i2c1_setup_xfer(client->address, count);
 
 	old = bcm2835_read(I2C1_C);
 	old |= (1<<7) | 1;
 	bcm2835_write(I2C1_C, old);
 
+	delay(150);
 	printk("i2c status reg: %x\n", STATUS & 0x1ff);
+	old = 0;
 
 	/* TODO: Use interrupts instead of this polling method */
 	while ((STATUS & I2C_S_DONE) != 0) { /* Loop while the I2C transfer is not done*/
+		if (old == 0) {
+			printk("made it inside read loop???\n");
+			old = 1;
+		}
 		while (STATUS & I2C_S_RXD) { /* Loop while there is data in the FIFO */
 			*buf = bcm2835_read(I2C1_FIFO) & I2C_FIFO_DATA;
 			buf++;
@@ -153,27 +157,21 @@ static int32_t bcm2835_i2c1_write(const struct i2c_client *client, const uint8_t
 	uint32_t old;
 	int32_t bytes_sent = 0;
 
-	// printk("\ni2c1 write start\n");
-	i2c1_start_xfer(client->address, count, I2C_C_WRITE);
+	i2c1_setup_xfer(client->address, count);
 
 	old = bcm2835_read(I2C1_C);
 	old |= (1<<7);
 	bcm2835_write(I2C1_C, old);
-
-	// printk("i2c status reg start: %x\n", STATUS & 0x1ff);
-	// wait for the transfer to start
 	delay(150);
 
 	/* TODO: Use interrupts instead of this polling method */
 	while (STATUS & I2C_S_DONE != 0) { /* Loop while transfer is ongoing */
-		/* Loop while there is data to write */
-		while(STATUS & I2C_S_TXW) {
-			// printk("sending byte %x\n", *buf);
+		while(STATUS & I2C_S_TXW) { /* Loop while there is data to write */
 			bcm2835_write(I2C1_FIFO, *buf++);
 			++bytes_sent;
 		}
 	}
-	// printk("i2c status reg (done): %x\n", STATUS & 0x1ff);
+
 	/* Set the DONE flag */
 	old = bcm2835_read(I2C1_S);
 	old |= I2C_S_DONE;
