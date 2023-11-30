@@ -11,6 +11,14 @@
 
 #include "lib/errors.h"
 
+#define DEBUG
+
+#ifdef DEBUG
+#include "lib/delay.h"
+#include "lib/printk.h"
+#endif
+
+
 static struct i2c_core i2c;
 
 int32_t i2c_init(int32_t type) {
@@ -25,6 +33,38 @@ int32_t i2c_init(int32_t type) {
 	}
 
 	i2c.initialized = 1;
+
+	/* If debugging set, initialize the controller and read the ID */
+	#ifdef DEBUG
+	uint8_t buf[6];
+	buf[0] = 0xF0;
+	buf[1] = 0x55;
+	result = i2c_write(0x52, buf, 2);
+	printk("write 1 result is %d\n", result);
+	// add a fat delay
+	delay(3000000);
+
+	buf[0] = 0xFB;
+	buf[1] = 0x00;
+	result = i2c_write(0x52, buf, 2);
+	printk("write 2 result is %d\n", result);
+	delay(3000000);
+
+	// 0 out the buffer
+	for (int i = 0; i < 6; ++i) {
+		buf[i] = 0;
+	}
+
+	buf[0] = 0xFA;
+	result = i2c_write(0x52, buf, 1);
+	printk("write 3 result is %d\n", result);
+	//
+	int32_t x = i2c_read(0x52, buf, 6);
+
+	printk("Read %d bytes\n", x);
+
+	printk("Read bytes: %x %x %x %x %x %x\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
+	#endif
 
 	return 0;
 }
@@ -44,9 +84,9 @@ int32_t i2c_read(int fd, uint8_t *buf, size_t count) {
 }
 
 int32_t i2c_write(int fd, const uint8_t *buf, size_t count) {
-		/* Let's cheat a little bit and have fd simply be the address */
+	/* Let's cheat a little bit and have fd simply be the address */
 	struct i2c_client client = {
-		.address = (short)fd,
+		.address = fd,
 		.flags = 0
 	};
 

@@ -7,7 +7,7 @@
 #define I2C_BCM2835 0
 
 struct i2c_client {
-	uint16_t address; /* Stored in lower bits */
+	uint32_t address; /* Stored in lower bits */
 	uint32_t flags; /* Holds things like 10 bit address, etc. */
 };
 

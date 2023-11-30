@@ -13,6 +13,10 @@
 #include "drivers/i2c/bcm2835_i2c.h"
 
 #include "lib/delay.h"
+#include "lib/printk.h"
+
+#define STATUS (bcm2835_read(I2C1_S))
+
 
 /* Private function definitions */
 static void bcm2835_i2c_enable_interrupts(void) {
@@ -52,7 +56,7 @@ static void bcm2835_i2c1_gpio_setup(void) {
 	bcm2835_write(GPIO_GPPUDCLK0, 0);
 }
 
-static void i2c1_start_xfer(uint16_t addr, size_t count, uint32_t dir) {
+static void i2c1_start_xfer(uint32_t addr, size_t count, uint32_t dir) {
 	/*
 	 * Transfers start with the following process:
 	 * 1. Set address register
@@ -62,19 +66,19 @@ static void i2c1_start_xfer(uint16_t addr, size_t count, uint32_t dir) {
 	 * 4. Set transfer direction
 	 */
 	uint32_t old;
-	bcm2835_write(I2C1_A, addr); /* Write the address */
+	bcm2835_write(I2C1_A, addr & I2C_A_ADDR); /* Write the address */
 
 	/* Clear previous flags */
-	old = bcm2835_read(I2C1_S);
-	old |= I2C_S_ERR | I2C_S_CLKT | I2C_S_DONE;
-	bcm2835_write(I2C1_S, old);
+	// old = bcm2835_read(I2C1_S);
+	// old |= I2C_S_ERR | I2C_S_CLKT | I2C_S_DONE;
+	bcm2835_write(I2C1_S, I2C_S_ERR | I2C_S_CLKT | I2C_S_DONE);
 
 	bcm2835_write(I2C1_DLEN, count); /* Write the data length */
 
 	/* Clear the FIFO, set direction and start the transfer */
 	old = bcm2835_read(I2C1_C);
 	old &= ~I2C_C_READ;
-	old |= I2C_C_CLEAR | dir | I2C_C_ST;
+	old |= I2C_C_CLEAR /*| dir | I2C_C_ST*/;
 	bcm2835_write(I2C1_C, old);
 
 
@@ -84,22 +88,50 @@ static void i2c1_start_xfer(uint16_t addr, size_t count, uint32_t dir) {
 static int32_t bcm2835_i2c1_read(const struct i2c_client *client, uint8_t *buf, size_t count) {
 	uint32_t old;
 	int32_t bytes_received = 0;
+
+	printk("\ni2c1 read start\n");
+
 	i2c1_start_xfer(client->address, count, I2C_C_WRITE);
 
+	old = bcm2835_read(I2C1_C);
+	old |= (1<<7) | 1;
+	bcm2835_write(I2C1_C, old);
+
+	printk("i2c status reg: %x\n", STATUS & 0x1ff);
+
 	/* TODO: Use interrupts instead of this polling method */
-	while (!(old = bcm2835_read(I2C1_S) & I2C_S_DONE)) { /* Loop while transfer is ongoing */
-		/* Loop while there is data in the FIFO */
-		while(bcm2835_read(I2C1_S) & I2C_S_RXD) {
-			*buf++ = bcm2835_read(I2C1_FIFO) & I2C_FIFO_DATA;
-			++bytes_received;
+	while ((STATUS & I2C_S_DONE) != 0) { /* Loop while the I2C transfer is not done*/
+		while (STATUS & I2C_S_RXD) { /* Loop while there is data in the FIFO */
+			*buf = bcm2835_read(I2C1_FIFO) & I2C_FIFO_DATA;
+			buf++;
+			bytes_received++;
 		}
 	}
 
-	/* The transfer may be done, but data could still be in the FIFO */
-	while (bytes_received < count && bcm2835_read(I2C1_S) & I2C_S_RXD) {
-		*buf++ = bcm2835_read(I2C1_FIFO) & I2C_FIFO_DATA;
-		++bytes_received;
+	printk("i2c1_s_done, data in fifo, perhaps?\n");
+
+	/* Transfer done, but may be data in fifo */
+	while (bytes_received < count && STATUS & I2C_S_RXD) {
+		*buf = bcm2835_read(I2C1_FIFO) & I2C_FIFO_DATA;
+		buf++;
+		bytes_received++;
 	}
+
+	// while (!(bcm2835_read(I2C1_S) & I2C_S_DONE)) { /* Loop while transfer is ongoing */
+	// 	/* Loop while there is data in the FIFO */
+	// 	while(bcm2835_read(I2C1_S) & I2C_S_RXD) {
+	// 		*buf++ = bcm2835_read(I2C1_FIFO) & I2C_FIFO_DATA;
+	// 		++bytes_received;
+	// 	}
+	// }
+
+	// printk("i2c1_s_done, data in fifo, perhaps?\n");
+
+	// /* The transfer may be done, but data could still be in the FIFO */
+	// while (bytes_received < count && bcm2835_read(I2C1_S) & I2C_S_RXD) {
+	// 	*buf++ = bcm2835_read(I2C1_FIFO) & I2C_FIFO_DATA;
+	// 	++bytes_received;
+	// }
 
 	/* Set the DONE flag */
 	old = bcm2835_read(I2C1_S);
@@ -110,7 +142,7 @@ static int32_t bcm2835_i2c1_read(const struct i2c_client *client, uint8_t *buf, 
 	if (old & I2C_S_ERR) {
 		return -1; /* FIXME: put correct value here */
 	} else if (old & I2C_S_CLKT) {
-		return -1; /* FIXME: put correct value here */
+		return -2; /* FIXME: put correct value here */
 	}
 
 	return bytes_received;
@@ -120,17 +152,28 @@ static int32_t bcm2835_i2c1_read(const struct i2c_client *client, uint8_t *buf, 
 static int32_t bcm2835_i2c1_write(const struct i2c_client *client, const uint8_t *buf, size_t count) {
 	uint32_t old;
 	int32_t bytes_sent = 0;
+
+	// printk("\ni2c1 write start\n");
 	i2c1_start_xfer(client->address, count, I2C_C_WRITE);
 
+	old = bcm2835_read(I2C1_C);
+	old |= (1<<7);
+	bcm2835_write(I2C1_C, old);
+
+	// printk("i2c status reg start: %x\n", STATUS & 0x1ff);
+	// wait for the transfer to start
+	delay(150);
+
 	/* TODO: Use interrupts instead of this polling method */
-	while (!(old = bcm2835_read(I2C1_S) & I2C_S_DONE)) { /* Loop while transfer is ongoing */
+	while (STATUS & I2C_S_DONE != 0) { /* Loop while transfer is ongoing */
 		/* Loop while there is data to write */
-		while(bcm2835_read(I2C1_S) & I2C_S_TXD) {
+		while(STATUS & I2C_S_TXW) {
+			// printk("sending byte %x\n", *buf);
 			bcm2835_write(I2C1_FIFO, *buf++);
 			++bytes_sent;
 		}
 	}
-
+	// printk("i2c status reg (done): %x\n", STATUS & 0x1ff);
 	/* Set the DONE flag */
 	old = bcm2835_read(I2C1_S);
 	old |= I2C_S_DONE;
@@ -166,8 +209,12 @@ int32_t bcm2835_i2c1_init(struct i2c_core *i2c) {
 
 	/* Configure i2c registers */
 	/* For now, just disable interrupts */
+	old = bcm2835_read(I2C1_C);
 	old &= ~(I2C_C_INTD | I2C_C_INTR | I2C_C_INTT);
 	bcm2835_write(I2C1_C, old);
+
+	/* Disable clock stretch timeout */
+	bcm2835_write(I2C1_CLKT, 0);
 
 	/* Enable i2c */
 	old |= I2C_C_I2CEN;
