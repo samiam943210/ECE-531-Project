@@ -5,10 +5,10 @@ all:	vlibc.a
 
 vlibc.a:	start.o \
 		div.o error.o printf.o random.o stdio.o string.o system.o time.o tty.o \
-		vmwos.o syscalls.arm.o
+		vmwos.o i2c-dev.o syscalls.arm.o
 	$(CROSS)$(AR) crs vlibc.a start.o \
 		div.o error.o printf.o random.o stdio.o string.o system.o time.o tty.o \
-		vmwos.o syscalls.arm.o
+		vmwos.o i2c-dev.o syscalls.arm.o
 
 start.o:	start.c
 	$(CROSS)$(CC) $(CFLAGS) -c start.c
@@ -42,6 +42,9 @@ tty.o:	tty.c
 
 vmwos.o:	vmwos.c
 	$(CROSS)$(CC) $(CFLAGS) -c vmwos.c
+
+i2c-dev.o:	i2c-dev.c
+	$(CROSS)$(CC) $(CFLAGS) -c i2c-dev.c
 
 syscalls.arm.o:	syscalls.arm.c
 	$(CROSS)$(CC) $(CFLAGS) -c syscalls.arm.c
