@@ -22,7 +22,6 @@
 #define	__NR_uname	122
 #define __NR_getdents	141
 #define __NR_nanosleep  162
-#define __NR_nanosleep  162
 #define __NR_getcwd	183
 #define __NR_vfork	190
 
