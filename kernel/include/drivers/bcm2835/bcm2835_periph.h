@@ -420,7 +420,7 @@
 /* I2C (see BCM2835 Peripherals Chapter 3	*/
 /************************************************/
 #define I2C0_BASE	(IO_BASE + 0x205000) /* 0x7E205000*/
-#define I2C1_BASE	(IO_BASE + 0x804000) /* 0x7E805000*/
+#define I2C1_BASE	(IO_BASE + 0x804000) /* 0x7E804000*/
 #define I2C2_BASE	(IO_BASE + 0x805000) /* 0x7E805000*/
 
 #define I2C0_C		(I2C0_BASE + 0x0)  /* Control */
@@ -473,7 +473,7 @@
 
 /* These probably are not needed? */
 #define I2C_DLEN_DLEN	(0xFFFF<<0)
-#define I2C_A_ADDR	(0x3F<<0)
+#define I2C_A_ADDR	(0x7F<<0)
 #define I2C_FIFO_DATA	(0xFF<<0)
 #define I2C_DIV_CDIV	(0xFFFF<<0)
 #define I2C_DEL_FEDL	(0xFFFF<<16)
