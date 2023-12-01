@@ -5,16 +5,16 @@ include ../Makefile.inc
 include Makefile_user.inc
 
 all:	shell \
-	cat cat_count hello ll ls printa printb pwd slideshow sysinfo uname
+	cat cat_count hello ll ls printa printb pwd slideshow sysinfo uname wii_controller
 
 image:	shell \
-	cat cat_count hello ll ls printa printb pwd slideshow sysinfo uname
+	cat cat_count hello ll ls printa printb pwd slideshow sysinfo uname wii_controller
 	mkdir -p image
 	mkdir -p image/bin
 	mkdir -p image/home
 	mkdir -p image/home/ansis
 	cp shell cat cat_count hello ll ls printa printb pwd slideshow \
-		sysinfo uname ./image/bin
+		sysinfo uname wii_controller ./image/bin
 	cp CATME ./image/home
 	$(GENROMFS) -f initrd.romfs -d image -V VMWos
 	echo "unsigned char initrd_image[]={" > initrd.h
@@ -57,6 +57,8 @@ sysinfo:	sysinfo.elf
 uname:	uname.elf
 	$(CROSS)objcopy $(OBJCOPYFLAGS) uname.elf -O binary uname
 
+wii_controller:	wii_controller.elf
+	$(CROSS)objcopy $(OBJCOPYFLAGS) wii_controller.elf -O binary wii_controller
 
 
 shell.elf:	shell.o ./vlibc/vlibc.a
@@ -94,6 +96,9 @@ sysinfo.elf:	sysinfo.o ./vlibc/vlibc.a
 
 uname.elf:	uname.o ./vlibc/vlibc.a
 	$(CROSS)$(CC) $(CFLAGS) $(LFLAGS) -o uname.elf uname.o ./vlibc/vlibc.a
+
+wii_controller.elf:	wii_controller.o ./vlibc/vlibc.a
+	$(CROSS)$(CC) $(CFLAGS) $(LFLAGS) -o wii_controller.elf wii_controller.o ./vlibc/vlibc.a
 
 ####
 
@@ -133,13 +138,16 @@ ls.o:	ls.c
 ll.o:	ll.arm.eabi.s logo.lzss_new
 	$(CROSS)$(AS) -o ll.o ll.arm.eabi.s
 
+wii_controller.o:	wii_controller.c
+	$(CROSS)$(CC) $(CFLAGS) -c wii_controller.c
+
 ./vlibc/vlibc.a:
 	cd	vlibc && make
 
 clean:
 	rm -f *~ *.o *.elf \
 		hello cat cat_count ll ls printa printb \
-		pwd shell slideshow sysinfo uname \
+		pwd shell slideshow sysinfo uname wii_controller \
 		initrd.h initrd.romfs
 	rm -rf image
 	cd vlibc && make clean
