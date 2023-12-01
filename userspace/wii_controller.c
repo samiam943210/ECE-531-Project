@@ -6,41 +6,91 @@
 #include "vmwos.h"
 #include "kernel/i2c-dev.h"
 
-void init_controller(void) {
-	int32_t result;
-	uint8_t buf[6];
-	buf[0] = 0xF0;
-	buf[1] = 0x55;
-	result = i2c_write(0x52, buf, 2);
-	printf("write 1 result is %d\n", result);
-	// add a fat delay
-	usleep(2000);
+#define WII_CONTROLLER_ADDR 0x52
 
-	buf[0] = 0xFB;
-	buf[1] = 0x00;
-	result = i2c_write(0x52, buf, 2);
-	printf("write 2 result is %d\n", result);
-	usleep(2000);
+/* Sets register reg_addr to value on the device at i2c1 addr */
+/* Returns 2 on success, negative on failure */
+static int32_t i2c_set_reg(uint16_t addr, uint8_t reg_addr, uint8_t value) {
+	uint8_t buf[2];
+	buf[0] = reg_addr;
+	buf[1] = value;
+	return i2c_write(WII_CONTROLLER_ADDR, buf, 2);
+}
 
-	// 0 out the buffer
-	for (int i = 0; i < 6; ++i) {
-		buf[i] = 0;
+/* Reads count bytes from address reg_addr from the i2c1 device at address addr */
+/* Returns the number of bytes read, negative on error */
+static int32_t i2c_get_regs(uint16_t addr, uint8_t reg_addr, uint8_t *buf, size_t count) {
+	i2c_write(WII_CONTROLLER_ADDR, &reg_addr, 1);
+	/* Give the controller a bit of time */
+	usleep(200);
+	return i2c_read(WII_CONTROLLER_ADDR, buf, count);
+}
+
+static int init_controller(void) {
+	uint16_t id;
+
+	/* Write first part of init sequence */
+	if (i2c_set_reg(WII_CONTROLLER_ADDR, 0xF0, 0x55) != 2) {
+		return -1;
 	}
 
-	buf[0] = 0xFA;
-	result = i2c_write(0x52, buf, 1);
-	printf("write 3 result is %d\n", result);
-	//
-	int32_t x = i2c_read(0x52, buf, 6);
+	usleep(2000); /* Give the controller some time */
 
-	printf("Read %d bytes\n", x);
+	if (i2c_set_reg(WII_CONTROLLER_ADDR, 0xFB, 0x00) != 2) {
+		return -2;
+	}
+	usleep(2000); /* Give the controller some time */
 
-	printf("Read bytes: %x %x %x %x %x %x\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
-	printf("Classic controller pro is 1 0 a4 20 1 1\n");
+	/* Read the identification byte from the controller */
+	if (i2c_get_regs(WII_CONTROLLER_ADDR, 0xFE, (uint8_t *)&id, 2) != 2) {
+		return -3;
+	}
+
+	switch (id) {
+		case 0x0000:
+			printf("Nunchuk");
+			break;
+		case 0x0101:
+			printf("Classic Controller");
+			break;
+		case 0x0013:
+			printf("Drawsome Graphics tablet");
+			break;
+		case 0x0103:
+			printf("Guitar Hero/DJ Hero controller");
+			break;
+		case 0x0111:
+			printf("Taiko no Tatsujin TaTaCon");
+			break;
+		case 0x0112:
+			printf("uDraw GameTablet");
+			break;
+		case 0x0310:
+			printf("Densha de GO! Shinkansen Controller");
+			break;
+		case 0x0402:
+			printf("Wii Balance Board");
+			break;
+		case 0x0005:
+		case 0x0405:
+			printf("Wii Motion Plus");
+			break;
+		/* Unlikely these will be seen */
+		case 0x0505:
+			printf("Wii Motion Plus (Nunchuck passthru)");
+			break;
+		case 0x0705:
+			printf("Wii Motion Plus (Classic Controller Passthru)");
+			break;
+		default:
+			printf("No valid controller detected!");
+			return;
+	}
+	printf(" detected\n");
 }
 
 int main() {
-	printf("Initializing wii classic controller pro\n");
-	init_controller();
-	return 0;
+	printf("Initializing Wii Extension Controller...\n");
+	return init_controller();
+	// return 0;
 }
