@@ -89,8 +89,16 @@ static int init_controller(void) {
 	printf(" detected\n");
 }
 
+/* Reads the registers from the device for the buttons */
+/* Returns negative on error, 0 on success */
+int read_buttons(uint8_t buf[6]) {
+	int results = i2c_get_regs(WII_CONTROLLER_ADDR, 0x00, buf, 6);
+	if (results < 0) return results;
+	else if (results != 6) return -3;
+	return 0;
+}
+
 int main() {
 	printf("Initializing Wii Extension Controller...\n");
 	return init_controller();
-	// return 0;
 }
