@@ -26,6 +26,7 @@ static int32_t i2c_get_regs(uint16_t addr, uint8_t reg_addr, uint8_t *buf, size_
 	return i2c_read(WII_CONTROLLER_ADDR, buf, count);
 }
 
+/* Please see https://wiibrew.org/wiki/Wiimote/Extension_Controllers for more information */
 static int init_controller(void) {
 	uint16_t id;
 
@@ -89,8 +90,34 @@ static int init_controller(void) {
 	printf(" detected\n");
 }
 
-/* Reads the registers from the device for the buttons */
-/* Returns negative on error, 0 on success */
+/*
+ * Reads the registers from the device for the buttons
+ * Register layout from https://wiibrew.org/wiki/Wiimote/Extension_Controllers/Classic_Controller_Pro
+ *
+ * |-----------------------------------------------------|
+ * | Byte|  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
+ * |-----------------------------------------------------|
+ * |  0  |  RX<4:3>  |              LX<5:0>              |
+ * |-----------------------------------------------------|
+ * |  1  |  RX<2:1>  |              LY<5:0>              |
+ * |-----------------------------------------------------|
+ * |  2  |RX<0>|  LT<4:3>  |           RY<4:0>           |
+ * |-----------------------------------------------------|
+ * |  3  |     LT<2:0>     |           RT<4:0>           |
+ * |-----------------------------------------------------|
+ * |  4  | BDR | BDD | BLT |  -  |  H  |  +  | BRT |-----|
+ * |-----------------------------------------------------|
+ * |  5  | ZL  |  B  |  Y  |  A  |  X  |  ZR | BDL | BDU |
+ * |-----------------------------------------------------|
+ *
+ * RX, RY, LX, LY are the analog sticks
+ * RT LT are analog shoulder buttons (will read 0 or 31 on classic controller pro)
+ * B{LT,RT} are the digital switch of shoulder buttons
+ * DPAD buttons are BD{L|R|U|D}
+ * Other buttons are the ABXY, plus, minus, and home, and the triggers
+ *
+ * Returns negative on error, 0 on success
+ */
 int read_buttons(uint8_t buf[6]) {
 	int results = i2c_get_regs(WII_CONTROLLER_ADDR, 0x00, buf, 6);
 	if (results < 0) return results;
