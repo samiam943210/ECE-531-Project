@@ -1,20 +1,23 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifdef VMWOS
 #include "syscalls.h"
 #include "vlibc.h"
 #include "vmwos.h"
-
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <string.h>
-// #include <time.h>
+#else
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#endif
 
 #define SHOE_SIZE 312
 #define HAND_SIZE 22
 #define MAX_HANDS 4
 #define CARD_SIZE 3
 
+#ifdef VMWOS
 void *memcpy(void *dest, const void *src, uint32_t n) {
 
         int i;
@@ -36,6 +39,7 @@ char *strcpy(char *dst, const char *src) {
 	memcpy(dst, src, n);
 	return dst;
 }
+#endif
 
 void create_shoe(char** shoe);
 void shuffle(char ** array, size_t n);
@@ -75,8 +79,6 @@ struct house {
 struct player player;
 struct house house;
 
-
-
 int main(void) {
     int i, j, x, bet_size, error_check, all_hands_bust, player_value, house_value;
     char* shoe[SHOE_SIZE]; //array that stores 6 decks of cards
@@ -100,7 +102,9 @@ int main(void) {
         player.next_slot[i] = 0;
         for (j=0;j<HAND_SIZE;j++) {
             for (x=0; x<CARD_SIZE; x++) {
+                #ifdef VMWOS
                 printf(""); /* WHY IS THIS NEEDED????????? */
+                #endif
                 player.hand[i][j][x] = *"\0";
             }
         }
@@ -108,9 +112,7 @@ int main(void) {
 
     printf("Welcome to the best blackjack simulator!\n");
 
-    player.money=0;
-
-    //run the game until the player is bankrupt
+    // run the game until the player is bankrupt
     while(player.money > 0) {
         all_hands_bust = 1;
         printf("\n *** new hand ***\n");
@@ -119,8 +121,12 @@ int main(void) {
         //get user input for how much they would like to bet
         while(1) {
             printf("You have $%d, please enter a bet size: ", player.money);
-            error_check = 1;//scanf("%d", &bet_size);
-            bet_size=10;
+            #ifndef VMWOS
+            error_check = scanf("%d", &bet_size);
+            #else
+            error_check = 0; // just exit for now if we get here
+            bet_size = 10;
+            #endif
             if (error_check != 1) {
                 printf("Error: Invalid input. Exiting now.\n");
                 return 1;
@@ -239,12 +245,15 @@ int house_turn(char ** shoe) {
 //have the player take their turn, set result to 2 on bust and 1 on stand
 int player_turn(char ** shoe) {
     int hand_index = 0, error_check, num_splits = 0, i;
-    char *action = "hit";//[12];
+    char action[12] = {'h', 'i', 't', 0};
     while(1) {
         //get user input for their desired action
         printf("please take an action (hit, double_down, split, stand): ");
-        error_check = 1;//scanf("%11s", action);
-        //action="hit";
+        #ifndef VMWOS
+        error_check = scanf("%11s", action);
+        #else
+        error_check = 1;
+        #endif
         if (error_check != 1) {
                 printf("Error: Invalid input. Exiting now.\n");
                 return 1;
@@ -526,7 +535,8 @@ void shuffle(char ** shoe, size_t n) {
 //assign the cards to the array
 void create_shoe(char** shoe) {
     int i;
-    char* all_cards[SHOE_SIZE] = {"AH", "AH", "AH", "AH", "AH", "AH", "AD", "AD", "AD", "AD", "AD", "AD", "AC", "AC", "AC", "AC", "AC", "AC", "AS", "AS", "AS", "AS", "AS", "AS", "KH", "KH", "KH", "KH", "KH", "KH", "KD", "KD", "KD", "KD", "KD", "KD", "KC", "KC", "KC", "KC", "KC", "KC", "KS", "KS", "KS", "KS", "KS", "KS", "QH", "QH", "QH", "QH", "QH", "QH", "QD", "QD", "QD", "QD", "QD", "QD", "QC", "QC", "QC", "QC", "QC", "QC", "QS", "QS", "QS", "QS", "QS", "QS", "JH", "JH", "JH", "JH", "JH", "JH", "JD", "JD", "JD", "JD", "JD", "JD", "JC", "JC", "JC", "JC", "JC", "JC", "JS", "JS", "JS", "JS", "JS", "JS", "TH", "TH", "TH", "TH", "TH", "TH", "TD", "TD", "TD", "TD", "TD", "TD", "TC", "TC", "TC", "TC", "TC", "TC", "TS", "TS", "TS", "TS", "TS", "TS", "9H", "9H", "9H", "9H", "9H", "9H", "9D", "9D", "9D", "9D", "9D", "9D", "9C", "9C", "9C", "9C", "9C", "9C", "9S", "9S", "9S", "9S", "9S", "9S", "8H", "8H", "8H", "8H", "8H", "8H", "8D", "8D", "8D", "8D", "8D", "8D", "8C", "8C", "8C", "8C", "8C", "8C", "8S", "8S", "8S", "8S", "8S", "8S", "7H", "7H", "7H", "7H", "7H", "7H", "7D", "7D", "7D", "7D", "7D", "7D", "7C", "7C", "7C", "7C", "7C", "7C", "7S", "7S", "7S", "7S", "7S", "7S", "6H", "6H", "6H", "6H", "6H", "6H", "6D", "6D", "6D", "6D", "6D", "6D", "6C", "6C", "6C", "6C", "6C", "6C", "6S", "6S", "6S", "6S", "6S", "6S", "5H", "5H", "5H", "5H", "5H", "5H", "5D", "5D", "5D", "5D", "5D", "5D", "5C", "5C", "5C", "5C", "5C", "5C", "5S", "5S", "5S", "5S", "5S", "5S", "4H", "4H", "4H", "4H", "4H", "4H", "4D", "4D", "4D", "4D", "4D", "4D", "4C", "4C", "4C", "4C", "4C", "4C", "4S", "4S", "4S", "4S", "4S", "4S", "3H", "3H", "3H", "3H", "3H", "3H", "3D", "3D", "3D", "3D", "3D", "3D", "3C", "3C", "3C", "3C", "3C", "3C", "3S", "3S", "3S", "3S", "3S", "3S", "2H", "2H", "2H", "2H", "2H", "2H", "2D", "2D", "2D", "2D", "2D", "2D", "2C", "2C", "2C", "2C", "2C", "2C", "2S", "2S", "2S", "2S", "2S", "2S"};
+    char* all_cards[SHOE_SIZE] = {"AH", "AH", "AH", "AH", "AH", "AH", "AD", "AD", "AD", "AD", "AD", "AD", "AC","AC", "AC", "AC", "AC", "AC", "AS", "AS", "AS", "AS", "AS", "AS", "KH", "KH", "KH", "KH", "KH", "KH", "KD", "KD", "KD", "KD", "KD", "KD", "KC", "KC", "KC", "KC", "KC", "KC", "KS", "KS", "KS", "KS", "KS", "KS", "QH", "QH", "QH", "QH", "QH", "QH", "QD", "QD", "QD", "QD", "QD", "QD", "QC", "QC", "QC", "QC", "QC", "QC", "QS", "QS", "QS", "QS", "QS", "QS", "JH", "JH", "JH", "JH", "JH", "JH", "JD", "JD", "JD", "JD", "JD", "JD", "JC", "JC", "JC", "JC", "JC", "JC", "JS", "JS", "JS", "JS", "JS", "JS", "TH", "TH", "TH", "TH", "TH", "TH", "TD", "TD", "TD", "TD", "TD", "TD", "TC", "TC", "TC", "TC", "TC", "TC", "TS", "TS", "TS", "TS", "TS", "TS", "9H", "9H", "9H", "9H", "9H", "9H", "9D", "9D", "9D", "9D", "9D", "9D", "9C", "9C", "9C", "9C", "9C", "9C", "9S", "9S", "9S", "9S", "9S", "9S", "8H", "8H", "8H", "8H", "8H", "8H", "8D", "8D", "8D", "8D", "8D", "8D", "8C", "8C", "8C", "8C", "8C", "8C", "8S", "8S", "8S", "8S", "8S", "8S", "7H", "7H", "7H", "7H", "7H", "7H", "7D", "7D", "7D", "7D", "7D", "7D", "7C", "7C", "7C", "7C", "7C", "7C", "7S", "7S", "7S", "7S", "7S", "7S", "6H", "6H", "6H", "6H", "6H", "6H", "6D", "6D", "6D", "6D", "6D", "6D", "6C", "6C", "6C", "6C", "6C", "6C", "6S", "6S", "6S", "6S", "6S", "6S", "5H", "5H", "5H", "5H", "5H", "5H", "5D", "5D", "5D", "5D", "5D", "5D", "5C", "5C", "5C", "5C", "5C", "5C", "5S", "5S", "5S", "5S", "5S", "5S", "4H", "4H", "4H", "4H", "4H", "4H", "4D", "4D", "4D", "4D", "4D", "4D", "4C", "4C", "4C", "4C", "4C", "4C", "4S", "4S", "4S", "4S", "4S", "4S", "3H", "3H", "3H", "3H", "3H", "3H", "3D", "3D", "3D", "3D", "3D", "3D", "3C", "3C", "3C", "3C", "3C", "3C", "3S", "3S", "3S", "3S", "3S", "3S", "2H", "2H", "2H", "2H", "2H", "2H", "2D", "2D", "2D", "2D", "2D", "2D", "2C", "2C", "2C", "2C", "2C", "2C", "2S", "2S", "2S", "2S", "2S", "2S"};
+    //char* all_cards[SHOE_SIZE] = {"AH" "AD", "AC", "AS", "KH", "KD", "KC", "KS", "QH", "QD", "QC", "QS", "JH", "JD", "JC", "JS", "TH", "TD", "TC", "TS", "9H", "9D", "9C", "9S", "8H", "8D", "8C", "8S", "7H", "7D", "7C", "7S", "6H", "6D", "6C", "6S", "5H", "5D", "5C", "5S", "4H", "4D", "4C", "4S", "3H", "3D", "3C", "3S", "2H", "2D", "2C", "2S", };
     //char* all_cards[SHOE_SIZE] = {"AH", "TH", "AH", "TH", "AH", "AH", "AH", "AH", "AD", "AD", "AD", "AD", "AD", "AD", "AC", "AC", "AC", "AC", "AC", "AC", "AS", "AS", "AS", "AS", "AS", "AS", "KH", "KH", "KH", "KH", "KH", "KH", "KD", "KD", "KD", "KD", "KD", "KD", "KC", "KC", "KC", "KC", "KC", "KC", "KS", "KS", "KS", "KS", "KS", "KS", "QH", "QH", "QH", "QH", "QD", "QD", "QD", "QD", "QD", "QD", "QC", "QC", "QC", "QC", "QC", "QC", "QS", "QS", "QS", "QS", "QS", "QS", "JH", "JH", "JH", "JH", "JH", "JH", "JD", "JD", "JD", "JD", "JD", "JD", "JC", "JC", "JC", "JC", "JC", "JC", "JS", "JS", "JS", "JS", "JS", "JS", "TH", "TH", "TH", "TH", "TH", "TH", "TD", "TD", "TD", "TD", "TD", "TD", "TC", "TC", "TC", "TC", "TC", "TC", "TS", "TS", "TS", "TS", "TS", "TS", "9H", "9H", "9H", "9H", "9H", "9H", "9D", "9D", "9D", "9D", "9D", "9D", "9C", "9C", "9C", "9C", "9C", "9C", "9S", "9S", "9S", "9S", "9S", "9S", "8H", "8H", "8H", "8H", "8H", "8H", "8D", "8D", "8D", "8D", "8D", "8D", "8C", "8C", "8C", "8C", "8C", "8C", "8S", "8S", "8S", "8S", "8S", "8S", "7H", "7H", "7H", "7H", "7H", "7H", "7D", "7D", "7D", "7D", "7D", "7D", "7C", "7C", "7C", "7C", "7C", "7C", "7S", "7S", "7S", "7S", "7S", "7S", "6H", "6H", "6H", "6H", "6H", "6H", "6D", "6D", "6D", "6D", "6D", "6D", "6C", "6C", "6C", "6C", "6C", "6C", "6S", "6S", "6S", "6S", "6S", "6S", "5H", "5H", "5H", "5H", "5H", "5H", "5D", "5D", "5D", "5D", "5D", "5D", "5C", "5C", "5C", "5C", "5C", "5C", "5S", "5S", "5S", "5S", "5S", "5S", "4H", "4H", "4H", "4H", "4H", "4H", "4D", "4D", "4D", "4D", "4D", "4D", "4C", "4C", "4C", "4C", "4C", "4C", "4S", "4S", "4S", "4S", "4S", "4S", "3H", "3H", "3H", "3H", "3H", "3H", "3D", "3D", "3D", "3D", "3D", "3D", "3C", "3C", "3C", "3C", "3C", "3C", "3S", "3S", "3S", "3S", "3S", "3S", "2H", "2H", "2H", "2H", "2H", "2H", "2D", "2D", "2D", "2D", "2D", "2D", "2C", "2C", "2C", "2C", "2C", "2C", "2S", "2S", "2S", "2S", "2S", "2S"};
 
     for(i=0; i<SHOE_SIZE; i++) {
