@@ -103,37 +103,40 @@ int read_buttons(uint8_t buf[6]) {
 	return 0;
 }
 
-int32_t wii_controller_prompt(const char *msg, int32_t starting_val, int32_t delta) {
+int32_t wii_controller_prompt(const char *msg, int32_t starting_val, int32_t delta, int32_t minimum) {
 	int32_t cash_money = starting_val;
 	int32_t col = strlen(msg)+1;
 	int result;
 	printf("\033[?25l%s%d", msg, cash_money);
 
 	uint16_t buttons_pressed = 0; // just ignore the analog sticks and triggers
-	uint16_t buttons_pressed_prev = 0; // just ignore the analog sticks and triggers
 	uint8_t buf[6]; // holds the raw data from the i2c read
 
-	while (!(buttons_pressed & BA)) {
+	uint8_t consecutive = 0;
+
+	while (!(buttons_pressed & BA)) { // loop until A pressed
 		if ((result = read_buttons(buf))) {
-			printf("\rError reading from controller\033[0\n");
-			return result;
+			printf("\rError reading from controller\033[0\n\033[?25h");
+			return INT32_MIN;
 		}
-		buttons_pressed_prev = buttons_pressed; // save previous state
+
 		buttons_pressed = ~((buf[4] << 8) | buf[5]); // stuff buttons into a single variable and invert
 
 		// figure out buttons that were just pressed
-		uint16_t tmp = (buttons_pressed ^ buttons_pressed_prev) & buttons_pressed;
-		if (tmp) {
-			if (tmp & BDD && (cash_money - delta) >= 0) {
+		if (buttons_pressed & (BDU | BDD)) { // only look at up and down
+			if (!consecutive && (buttons_pressed & BDD) && (cash_money - delta) >= minimum) {
 				cash_money -= delta;
 			}
-			if (tmp & BDU) {
+			if (!consecutive && (buttons_pressed & BDU)) {
 				cash_money += delta;
 			}
+			consecutive = (consecutive + 1) & 0x07;
 			printf("\033[%dG%d\033[0K", col, cash_money);
+		} else {
+			consecutive = 0; // reset the counter
 		}
 
-		usleep(2000);
+		usleep(2000); // a delay to slow down the program a bit
 	}
 	printf("\n\033[?25h");
 	return cash_money;
@@ -150,7 +153,7 @@ int main() {
 	}
 
 	printf("Press up or down to change the value or press A to confirm.\n");
-	int32_t cash_money = wii_controller_prompt("Choose bet amount: $", 10,10);
+	int32_t cash_money = wii_controller_prompt("Choose bet amount: $", 10,10,0);
 
 	printf("Player betted $%d\n", cash_money);
 
