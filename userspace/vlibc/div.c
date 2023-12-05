@@ -30,3 +30,6 @@ uint32_t __aeabi_uidiv(uint32_t dividend, uint32_t divisor) {
 	return q;
 }
 
+int32_t __aeabi_idivmod(int32_t dividend, int32_t divisor) {
+	return dividend - __aeabi_uidiv((uint32_t)dividend, (uint32_t)divisor) * divisor;
+}

@@ -6,17 +6,23 @@
 #include "vmwos.h"
 #include "vlibc.h"
 
-int32_t rand(void) {
+static uint32_t s = 0xDA1CE2A9; // seed
 
-	uint32_t buffer;
-	int32_t result;
+void srand(uint16_t seed)
+{
+	// set the lower 16 bits of s to seed (and make sure it's odd)
+	s = (s & 0xffff0000) | seed | 1;
+	rand(); // generate a few random numbers
+	rand();
+	rand();
+	rand();
+}
 
-	result=vmwos_random(&buffer);
-
-	if (result<4) {
-		printf("Error!\n");
-		return -1;
-	}
-
-	return buffer;
+uint16_t rand(void)
+{
+	static uint32_t x; // Previous random number
+	static uint32_t w; // Weyl Sequence
+	x *= x; // square number
+	x += w += s; // apply the Weyl sequence to x
+	return (x = (x >> 16) | (x << 16)); // rotate x
 }

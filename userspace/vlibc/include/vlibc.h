@@ -1,5 +1,10 @@
+// #ifndef __VLIBC_H
+// #define __VLIBC_H
+#include <stdint.h>
+
 /* div.c */
 uint32_t __aeabi_uidiv(uint32_t dividend, uint32_t divisor);
+int32_t __aeabi_idivmod(int32_t dividend, int32_t divisor);
 
 /* error.c */
 extern int errno;
@@ -10,7 +15,13 @@ int printf(char *string,...);
 int sprintf(char *string, char *fmt, ...);
 
 /* random.c */
-int32_t rand(void);
+// int32_t rand(void);
+// Sets the seed of the random number generator
+void srand(uint16_t seed);
+
+// Generates a 16 bit random number using the Middle-Square Weyl Sequence method
+// Do not call this in an interrupt handler
+uint16_t rand(void);
 
 /* stdio.c */
 int putchar(int c);
@@ -33,3 +44,4 @@ char *time_pretty(int32_t time, char *buffer, int32_t size);
 
 /* tty.c */
 void cfmakeraw(struct termios *termios_p);
+// #endif

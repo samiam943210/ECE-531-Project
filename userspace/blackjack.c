@@ -1,17 +1,44 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <stdint.h>
+#include <stddef.h>
 
+#include "syscalls.h"
+#include "vlibc.h"
+#include "vmwos.h"
+
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <string.h>
+// #include <time.h>
 
 #define SHOE_SIZE 312
 #define HAND_SIZE 22
 #define MAX_HANDS 4
 #define CARD_SIZE 3
 
+void *memcpy(void *dest, const void *src, uint32_t n) {
+
+        int i;
+
+        char *d=dest;
+        const char *s=src;
+
+        for(i=0;i<n;i++) {
+                *d=*s;
+                d++;
+		s++;
+        }
+
+        return dest;
+}
+
+char *strcpy(char *dst, const char *src) {
+	uint32_t n = strlen(src);
+	memcpy(dst, src, n);
+	return dst;
+}
 
 void create_shoe(char** shoe);
-void shuffle(char ** array, size_t n, int( * rand_func)(void));
+void shuffle(char ** array, size_t n);
 char* pop_shoe(char ** shoe);
 void reset_hands(void);
 void print_shoe(char ** shoe);
@@ -56,8 +83,11 @@ int main(void) {
 
     //create a shoe of 6 decks and then shuffle the shoe randomly
     create_shoe(shoe);
+    printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
     srand(time(NULL));
-	shuffle(shoe, SHOE_SIZE, rand);
+    printf("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB\n");
+	shuffle(shoe, SHOE_SIZE);
+    printf("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC\n");
 
     //initialize player and house structures
     player.money = 1500;
@@ -79,7 +109,7 @@ int main(void) {
     }
 
     printf("Welcome to the best blackjack simulator!\n");
-    
+
     //run the game until the player is bankrupt
     while(player.money > 0) {
         all_hands_bust = 1;
@@ -89,7 +119,8 @@ int main(void) {
         //get user input for how much they would like to bet
         while(1) {
             printf("You have $%d, please enter a bet size: ", player.money);
-            error_check = scanf("%d", &bet_size);
+            error_check = 0;//scanf("%d", &bet_size);
+            bet_size=10;
             if (error_check != 1) {
                 printf("Error: Invalid input. Exiting now.\n");
                 exit(0);
@@ -206,17 +237,18 @@ void house_turn(char ** shoe) {
 //have the player take their turn, set result to 2 on bust and 1 on stand
 void player_turn(char ** shoe) {
     int hand_index = 0, error_check, num_splits = 0, i;
-    char action[12];
+    char *action = "hit";//[12];
     while(1) {
         //get user input for their desired action
         printf("please take an action (hit, double_down, split, stand): ");
-        error_check = scanf("%11s", action);
+        error_check = 0;//scanf("%11s", action);
+        //action="hit";
         if (error_check != 1) {
                 printf("Error: Invalid input. Exiting now.\n");
                 exit(0);
         }
 
-        if(!strcmp(action, "hit")) { 
+        if(!strncmp(action, "hit", 3)) {
             //deal the next card
             if(!strcpy(player.hand[hand_index][player.next_slot[hand_index]], pop_shoe(shoe))) {
                 printf("Error dealing the next card exiting now\n");
@@ -228,7 +260,7 @@ void player_turn(char ** shoe) {
                 print_player_hand(hand_index);
                 printf("bust!\n");
                 player.result[hand_index] = 2;
-            
+
                 //check if this is the last hand the player has
                 if (hand_index == num_splits) {
                     return;
@@ -248,7 +280,7 @@ void player_turn(char ** shoe) {
                 //there are more hands, deal with these
                 hand_index += 1;
             }
-        } else if(!strcmp(action, "double_down")) {
+        } else if(!strncmp(action, "double_down", 11)) {
             //check the player can actually split
             if(player.has_split) {
                 printf("You cannot double down after splitting\n");
@@ -272,7 +304,7 @@ void player_turn(char ** shoe) {
                 exit(0);
             }
             player.next_slot[hand_index] += 1;
-            print_player_hand(hand_index); 
+            print_player_hand(hand_index);
             player.value[hand_index] = hand_value_player(hand_index);
 
             if(player.value[hand_index] > 21) { // if the player busted
@@ -282,7 +314,7 @@ void player_turn(char ** shoe) {
                 player.result[hand_index] = 1;
             }
             return;
-        } else if(!strcmp(action, "stand")) {
+        } else if(!strncmp(action, "stand", 5)) {
             player.result[hand_index] = 1;
             player.value[hand_index] = hand_value_player(hand_index);
             //check if this is the last hand the player has
@@ -291,7 +323,7 @@ void player_turn(char ** shoe) {
             }
             //there are more hands, deal with these
             hand_index += 1;
-        }  else if(!strcmp(action, "split")) {
+        }  else if(!strncmp(action, "split", 5)) {
             printf("cards: %s %s\n", &player.hand[hand_index][0][0], &player.hand[hand_index][1][0]);
 
             //check the player is able to split
@@ -312,7 +344,7 @@ void player_turn(char ** shoe) {
             //split the hand
             player.money -= player.bet_size;
             i=1;
-            while(strcmp(player.hand[hand_index+i][0], "")){ //find the next available hand array
+            while(strncmp(player.hand[hand_index+i][0], "", 0)){ //find the next available hand array
                 i++;
             }
             if(!strcpy(player.hand[hand_index+i][0], player.hand[hand_index][1])) {
@@ -386,7 +418,7 @@ int hand_value_house(void) {
 }
 
 
-//print the corresponding player's hand 
+//print the corresponding player's hand
 void print_player_hand(int hand_index) {
     int i;
 
@@ -446,14 +478,14 @@ char* pop_shoe(char ** shoe) {
     char* tmp = shoe[0]; //get the next card
 
     //if the shoe has run out of cards, reshuffle the cards
-    if(!strcmp(tmp, "\0")) {
+    if(!strncmp(tmp, "\0", 1)) {
         printf("The shoe has run out. Reshuffling now.\n");
         create_shoe(shoe);
         srand(time(NULL));
-	    shuffle(shoe, SHOE_SIZE, rand);
+	    shuffle(shoe, SHOE_SIZE);
         tmp = shoe[0]; //get the next card
     }
-    
+
     //move the rest of the cards one closer to the top
     for(i=0; i< SHOE_SIZE-1; i++) {
         shoe[i] = shoe[i+1];
@@ -476,11 +508,11 @@ void print_shoe(char ** shoe) {
 }
 
 
-//shuffle a shoe of cards randomly. This function is borrowed from 
+//shuffle a shoe of cards randomly. This function is borrowed from
 //www.w3resource.com
-void shuffle(char ** shoe, size_t n, int( * rand_func)(void)) {
+void shuffle(char ** shoe, size_t n) {
   for (int i = n - 1; i > 0; i--) {
-    int j = rand_func() % (i + 1);
+    int j = rand() % (i + 1);
     char* tmp = shoe[i];
     shoe[i] = shoe[j];
     shoe[j] = tmp;

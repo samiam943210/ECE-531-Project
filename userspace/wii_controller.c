@@ -85,9 +85,10 @@ static int init_controller(void) {
 			break;
 		default:
 			printf("No valid controller detected!");
-			return;
+			return 1;
 	}
 	printf(" detected\n");
+	return 0;
 }
 
 /*
@@ -127,5 +128,16 @@ int read_buttons(uint8_t buf[6]) {
 
 int main() {
 	printf("Initializing Wii Extension Controller...\n");
-	return init_controller();
+	int result = init_controller();
+
+	int x = 5;
+	int y = 2;
+	int z = x % y;
+	printf("%d %% %d = %d\n", x,y,z);
+
+	for (int i = 0; i < 10; ++i) {
+		printf("%d\n", rand());
+	}
+
+	return result;
 }

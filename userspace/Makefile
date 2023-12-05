@@ -5,15 +5,15 @@ include ../Makefile.inc
 include Makefile_user.inc
 
 all:	shell \
-	cat cat_count hello ll ls printa printb pwd slideshow sysinfo uname wii_controller
+	blackjack cat cat_count hello ll ls printa printb pwd slideshow sysinfo uname wii_controller
 
 image:	shell \
-	cat cat_count hello ll ls printa printb pwd slideshow sysinfo uname wii_controller
+	blackjack cat cat_count hello ll ls printa printb pwd slideshow sysinfo uname wii_controller
 	mkdir -p image
 	mkdir -p image/bin
 	mkdir -p image/home
 	mkdir -p image/home/ansis
-	cp shell cat cat_count hello ll ls printa printb pwd slideshow \
+	cp shell blackjack cat cat_count hello ll ls printa printb pwd slideshow \
 		sysinfo uname wii_controller ./image/bin
 	cp CATME ./image/home
 	$(GENROMFS) -f initrd.romfs -d image -V VMWos
@@ -23,6 +23,9 @@ image:	shell \
 
 shell:	shell.elf
 	$(CROSS)objcopy $(OBJCOPYFLAGS) shell.elf -O binary shell
+
+blackjack:	blackjack.elf
+	$(CROSS)objcopy $(OBJCOPYFLAGS) blackjack.elf -O binary blackjack
 
 cat:	cat.elf
 	$(CROSS)objcopy $(OBJCOPYFLAGS) cat.elf -O binary cat
@@ -64,6 +67,10 @@ wii_controller:	wii_controller.elf
 shell.elf:	shell.o ./vlibc/vlibc.a
 	$(CROSS)$(CC) $(CFLAGS) $(LFLAGS) -o shell.elf shell.o ./vlibc/vlibc.a
 
+blackjack.elf:	blackjack.o ./vlibc/vlibc.a
+	$(CROSS)$(CC) $(CFLAGS) $(LFLAGS) -o blackjack.elf blackjack.o ./vlibc/vlibc.a
+#	$(CROSS)$(CC) $(CFLAGS) $(LFLAGS) -o blackjack.elf blackjack.o ./vlibc/vlibc.a -L/usr/lib/gcc/arm-none-eabi/13.2.0 -lgcc
+
 cat.elf:	cat.o ./vlibc/vlibc.a
 	$(CROSS)$(CC) $(CFLAGS) $(LFLAGS) -o cat.elf cat.o ./vlibc/vlibc.a
 
@@ -101,6 +108,9 @@ wii_controller.elf:	wii_controller.o ./vlibc/vlibc.a
 	$(CROSS)$(CC) $(CFLAGS) $(LFLAGS) -o wii_controller.elf wii_controller.o ./vlibc/vlibc.a
 
 ####
+
+blackjack.o:	blackjack.c
+	$(CROSS)$(CC) $(CFLAGS) -c blackjack.c
 
 cat.o:	cat.c
 	$(CROSS)$(CC) $(CFLAGS) -c cat.c
@@ -146,7 +156,7 @@ wii_controller.o:	wii_controller.c
 
 clean:
 	rm -f *~ *.o *.elf \
-		hello cat cat_count ll ls printa printb \
+		hello blackjack cat cat_count ll ls printa printb \
 		pwd shell slideshow sysinfo uname wii_controller \
 		initrd.h initrd.romfs
 	rm -rf image
