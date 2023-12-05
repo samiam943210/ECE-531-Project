@@ -5,15 +5,15 @@ include ../Makefile.inc
 include Makefile_user.inc
 
 all:	shell \
-	blackjack cat cat_count hello ll ls printa printb pwd slideshow sysinfo uname wii_controller
+	blackjack bet_amount cat cat_count hello ll ls printa printb pwd slideshow sysinfo uname wii_controller
 
 image:	shell \
-	blackjack cat cat_count hello ll ls printa printb pwd slideshow sysinfo uname wii_controller
+	blackjack bet_amount cat cat_count hello ll ls printa printb pwd slideshow sysinfo uname wii_controller
 	mkdir -p image
 	mkdir -p image/bin
 	mkdir -p image/home
 	mkdir -p image/home/ansis
-	cp shell blackjack cat cat_count hello ll ls printa printb pwd slideshow \
+	cp shell blackjack bet_amount cat cat_count hello ll ls printa printb pwd slideshow \
 		sysinfo uname wii_controller ./image/bin
 	cp CATME ./image/home
 	$(GENROMFS) -f initrd.romfs -d image -V VMWos
@@ -26,6 +26,9 @@ shell:	shell.elf
 
 blackjack:	blackjack.elf
 	$(CROSS)objcopy $(OBJCOPYFLAGS) blackjack.elf -O binary blackjack
+
+bet_amount:	bet_amount.elf
+	$(CROSS)objcopy $(OBJCOPYFLAGS) bet_amount.elf -O binary bet_amount
 
 cat:	cat.elf
 	$(CROSS)objcopy $(OBJCOPYFLAGS) cat.elf -O binary cat
@@ -69,7 +72,9 @@ shell.elf:	shell.o ./vlibc/vlibc.a
 
 blackjack.elf:	blackjack.o ./vlibc/vlibc.a
 	$(CROSS)$(CC) $(CFLAGS) $(LFLAGS) -o blackjack.elf blackjack.o ./vlibc/vlibc.a
-#	$(CROSS)$(CC) $(CFLAGS) $(LFLAGS) -o blackjack.elf blackjack.o ./vlibc/vlibc.a -L/usr/lib/gcc/arm-none-eabi/13.2.0 -lgcc
+
+bet_amount.elf:	bet_amount.o ./vlibc/vlibc.a
+	$(CROSS)$(CC) $(CFLAGS) $(LFLAGS) -o bet_amount.elf bet_amount.o ./vlibc/vlibc.a
 
 cat.elf:	cat.o ./vlibc/vlibc.a
 	$(CROSS)$(CC) $(CFLAGS) $(LFLAGS) -o cat.elf cat.o ./vlibc/vlibc.a
@@ -111,6 +116,9 @@ wii_controller.elf:	wii_controller.o ./vlibc/vlibc.a
 
 blackjack.o:	blackjack.c
 	$(CROSS)$(CC) $(CFLAGS) -c blackjack.c
+
+bet_amount.o:	bet_amount.c
+	$(CROSS)$(CC) $(CFLAGS) -c bet_amount.c
 
 cat.o:	cat.c
 	$(CROSS)$(CC) $(CFLAGS) -c cat.c
