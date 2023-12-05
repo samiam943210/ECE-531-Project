@@ -32,7 +32,7 @@ void *memcpy(void *dest, const void *src, uint32_t n) {
 }
 
 char *strcpy(char *dst, const char *src) {
-	uint32_t n = strlen(src);
+	uint32_t n = strlen(src)+1;
 	memcpy(dst, src, n);
 	return dst;
 }
@@ -43,12 +43,12 @@ char* pop_shoe(char ** shoe);
 void reset_hands(void);
 void print_shoe(char ** shoe);
 void print_player_hand(int hand_index);
-void player_turn(char ** shoe);
+int player_turn(char ** shoe);
 void print_house_hand(void);
 void print_house_hand_hidden(void);
 int hand_value_player(int hand_index);
 int hand_value_house(void);
-void house_turn(char ** shoe);
+int house_turn(char ** shoe);
 
 
 //create the player struct
@@ -83,11 +83,8 @@ int main(void) {
 
     //create a shoe of 6 decks and then shuffle the shoe randomly
     create_shoe(shoe);
-    printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
     srand(time(NULL));
-    printf("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB\n");
 	shuffle(shoe, SHOE_SIZE);
-    printf("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC\n");
 
     //initialize player and house structures
     player.money = 1500;
@@ -103,12 +100,15 @@ int main(void) {
         player.next_slot[i] = 0;
         for (j=0;j<HAND_SIZE;j++) {
             for (x=0; x<CARD_SIZE; x++) {
-                player.hand[i][j][x] = *"";
+                printf(""); /* WHY IS THIS NEEDED????????? */
+                player.hand[i][j][x] = *"\0";
             }
         }
     }
 
     printf("Welcome to the best blackjack simulator!\n");
+
+    player.money=0;
 
     //run the game until the player is bankrupt
     while(player.money > 0) {
@@ -119,11 +119,11 @@ int main(void) {
         //get user input for how much they would like to bet
         while(1) {
             printf("You have $%d, please enter a bet size: ", player.money);
-            error_check = 0;//scanf("%d", &bet_size);
+            error_check = 1;//scanf("%d", &bet_size);
             bet_size=10;
             if (error_check != 1) {
                 printf("Error: Invalid input. Exiting now.\n");
-                exit(0);
+                return 1;
             }
 
             //check the bet size is valid, if so break the loop
@@ -140,12 +140,12 @@ int main(void) {
         for (i=0; i<2; i++) {
             if(!strcpy(&player.hand[player.hand_index][i][0], pop_shoe(shoe))) {
                 printf("Error dealing the cards. Exiting now.\n");
-                exit(0);
+                return 1;
             }
 
             if(!strcpy(&house.hand[i][0], pop_shoe(shoe))) {
                 printf("Error dealing the cards. Exiting now.\n");
-                exit(0);
+                return 1;
             }
         }
         player.next_slot[player.hand_index] += 2;
@@ -155,7 +155,8 @@ int main(void) {
 
 
         //have the player take their turn
-        player_turn(shoe);
+        if (player_turn(shoe))
+            return 1;
 
         //check if the player stood on any hands
         for(i=0; i<MAX_HANDS; i++) {
@@ -168,7 +169,8 @@ int main(void) {
         if(all_hands_bust) {
             printf("The player has bust, dealer automatically wins\n");
         } else {
-            house_turn(shoe);
+            if (house_turn(shoe))
+                return 1;
         }
 
         //check who won each hand, award money on win
@@ -203,12 +205,12 @@ int main(void) {
 
     //end the game
     printf("You have run out of money. Thank you for playing!\n");
-    return 1;
+    return 0;
 }
 
 
 //have the house take it's turn, set result to 2 on bust and 1 on stand
-void house_turn(char ** shoe) {
+int house_turn(char ** shoe) {
     while(1) {
         house.value = hand_value_house();
         //check if the dealer has busted or needs to stand
@@ -216,18 +218,18 @@ void house_turn(char ** shoe) {
             print_house_hand();
             house.result = 2;
             printf("Dealer busts!\n");
-            return;
+            return 0;
         } else if (house.value >= 17) {
             printf("Dealer stands at ");
             print_house_hand();
             house.result = 1;
-            return;
+            return 0;
         }
 
         //the dealer must hit, so deal the next card
         if(!strcpy(house.hand[house.next_slot], pop_shoe(shoe))) {
                 printf("Error dealing the next card exiting now\n");
-                exit(0);
+                return 1;
             }
             house.next_slot += 1;
     }
@@ -235,24 +237,24 @@ void house_turn(char ** shoe) {
 
 
 //have the player take their turn, set result to 2 on bust and 1 on stand
-void player_turn(char ** shoe) {
+int player_turn(char ** shoe) {
     int hand_index = 0, error_check, num_splits = 0, i;
     char *action = "hit";//[12];
     while(1) {
         //get user input for their desired action
         printf("please take an action (hit, double_down, split, stand): ");
-        error_check = 0;//scanf("%11s", action);
+        error_check = 1;//scanf("%11s", action);
         //action="hit";
         if (error_check != 1) {
                 printf("Error: Invalid input. Exiting now.\n");
-                exit(0);
+                return 1;
         }
 
         if(!strncmp(action, "hit", 3)) {
             //deal the next card
             if(!strcpy(player.hand[hand_index][player.next_slot[hand_index]], pop_shoe(shoe))) {
                 printf("Error dealing the next card exiting now\n");
-                exit(0);
+                return 1;
             }
             player.next_slot[hand_index] += 1;
             player.value[hand_index] = hand_value_player(hand_index);
@@ -263,7 +265,7 @@ void player_turn(char ** shoe) {
 
                 //check if this is the last hand the player has
                 if (hand_index == num_splits) {
-                    return;
+                    return 0;
                 }
                 //there are more hands, deal with these
                 hand_index += 1;
@@ -275,7 +277,7 @@ void player_turn(char ** shoe) {
                 player.result[hand_index] = 1;
                 //check if this is the last hand the player has
                 if (hand_index == num_splits) {
-                    return;
+                    return 0;
                 }
                 //there are more hands, deal with these
                 hand_index += 1;
@@ -301,7 +303,7 @@ void player_turn(char ** shoe) {
             player.bet_size += player.bet_size;
             if(!strcpy(player.hand[hand_index][player.next_slot[hand_index]], pop_shoe(shoe))) {
                 printf("Error dealing the next card exiting now\n");
-                exit(0);
+                return 1;
             }
             player.next_slot[hand_index] += 1;
             print_player_hand(hand_index);
@@ -313,13 +315,13 @@ void player_turn(char ** shoe) {
             } else {
                 player.result[hand_index] = 1;
             }
-            return;
+            return 0;
         } else if(!strncmp(action, "stand", 5)) {
             player.result[hand_index] = 1;
             player.value[hand_index] = hand_value_player(hand_index);
             //check if this is the last hand the player has
             if (hand_index == num_splits) {
-                return;
+                return 0;
             }
             //there are more hands, deal with these
             hand_index += 1;
@@ -349,11 +351,11 @@ void player_turn(char ** shoe) {
             }
             if(!strcpy(player.hand[hand_index+i][0], player.hand[hand_index][1])) {
                 printf("Error splitting the hand, now exiting\n");
-                exit(0);
+                return 1;
             }
             if(!strcpy(player.hand[hand_index][player.next_slot[hand_index]-1], "")) {
                 printf("Error splitting the hand, exiting now\n");
-                exit(0);
+                return 1;
             }
             num_splits++;
             player.hand_index++;
@@ -462,10 +464,11 @@ void reset_hands(void) {
         player.next_slot[i] = 0;
         for (j=0;j<HAND_SIZE;j++) {
             if(j<3) {
-                house.hand[i][j] = *"";
+                house.hand[i][j] = *"\0";
             }
             for (x=0; x<CARD_SIZE; x++) {
-                player.hand[i][j][x] = *"";
+                printf(""); /* WHY IS THIS NEEDED????????? */
+                player.hand[i][j][x] = *"\0";
             }
         }
     }
