@@ -204,6 +204,8 @@ int main() {
 				printf("+ ");
 			if (tmp & BMI)
 				printf("- ");
+			if (tmp & BHO)
+				printf("H ");
 			printf("\n", tmp);
 		}
 
