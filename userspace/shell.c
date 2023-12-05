@@ -119,7 +119,7 @@ static int parse_input(char *string) {
 		if (string[4]!=0) printf("%s\n",string+5);
 	}
 	else if (!strncmp(string,"cls",3)) {
-		printf("\n\r\033[2J");
+		printf("\n\r\033[2J\033[H");
 	}
 	else if (!strncmp(string,"cd",2)) {
 		if (strlen(string)>3) {
