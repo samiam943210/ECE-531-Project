@@ -46,13 +46,14 @@ static int init_controller(void) {
 	if (i2c_get_regs(WII_CONTROLLER_ADDR, 0xFE, (uint8_t *)&id, 2) != 2) {
 		return -3;
 	}
-
+	int result = -4;
 	switch (id) {
 		case 0x0000:
 			printf("Nunchuk");
 			break;
 		case 0x0101:
 			printf("Classic Controller");
+			result = 0;
 			break;
 		case 0x0013:
 			printf("Drawsome Graphics tablet");
@@ -88,7 +89,7 @@ static int init_controller(void) {
 			return 1;
 	}
 	printf(" detected\n");
-	return 0;
+	return result;
 }
 
 /*
@@ -116,7 +117,24 @@ static int init_controller(void) {
  * B{LT,RT} are the digital switch of shoulder buttons
  * DPAD buttons are BD{L|R|U|D}
  * Other buttons are the ABXY, plus, minus, and home, and the triggers
- *
+ */
+#define BDR (1<<15)
+#define BDD (1<<14)
+#define BLT (1<<13)
+#define BMI (1<<12)
+#define BHO (1<<11)
+#define BPL (1<<10)
+#define BRT (1<<9)
+/* bit 10 is unused */
+#define BZL (1<<7)
+#define BB (1<<6)
+#define BY (1<<5)
+#define BA (1<<4)
+#define BX (1<<3)
+#define BZR (1<<2)
+#define BDL (1<<1)
+#define BDU (1<<0)
+/*
  * Returns negative on error, 0 on success
  */
 int read_buttons(uint8_t buf[6]) {
@@ -129,15 +147,68 @@ int read_buttons(uint8_t buf[6]) {
 int main() {
 	printf("Initializing Wii Extension Controller...\n");
 	int result = init_controller();
-
-	int x = 5;
-	int y = 2;
-	int z = x % y;
-	printf("%d %% %d = %d\n", x,y,z);
-
-	for (int i = 0; i < 10; ++i) {
-		printf("%d\n", rand());
+	if (result < 0) {
+		printf("Error configuring controller: %d\n", result);
+		return -1;
+	} else if (result) {
+		printf("A controller was connected, but not a classic controller, exiting.\n");
+		return -2;
 	}
 
-	return result;
+	uint16_t buttons_pressed = 0; // just ignore the analog sticks and triggers
+	uint16_t buttons_pressed_prev = 0; // just ignore the analog sticks and triggers
+	uint8_t buf[6]; // holds the raw data from the i2c read
+
+	printf("Reading buttons: printing when a new one is pressed.\n");
+	printf("Press home to exit\n");
+	while (!(buttons_pressed & BHO)) {
+		if ((result = read_buttons(buf))) {
+			printf("Error reading from controller\n");
+			return result;
+		}
+		buttons_pressed_prev = buttons_pressed; // save previous state
+		buttons_pressed = ~((buf[4] << 8) | buf[5]); // stuff buttons into a single variable and invert
+
+		// figure out buttons that were just pressed
+		uint16_t tmp = (buttons_pressed ^ buttons_pressed_prev) & buttons_pressed;
+		if (tmp) {
+			// print the pressed button
+			if (tmp & BDR)
+				printf("> ");
+			if (tmp & BDD)
+				printf("V ");
+			if (tmp & BDL)
+				printf("< ");
+			if (tmp & BDU)
+				printf("^ ");
+
+			if (tmp & BA)
+				printf("A ");
+			if (tmp & BB)
+				printf("B ");
+			if (tmp & BX)
+				printf("X ");
+			if (tmp & BY)
+				printf("Y ");
+
+			if (tmp & BRT)
+				printf("RT ");
+			if (tmp & BLT)
+				printf("LT ");
+			if (tmp & BZR)
+				printf("ZL ");
+			if (tmp & BZL)
+				printf("ZR ");
+
+			if (tmp & BPL)
+				printf("+ ");
+			if (tmp & BMI)
+				printf("- ");
+			printf("\n", tmp);
+		}
+
+		usleep(2000);
+	}
+
+	return 0;
 }
